@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aiops-config
+  namespace: aiops
+data:
+  AIOPS_ENABLED: 'true'
+  AIOPS_ALLOWED_NAMESPACES: video-platform
+  REMEDIATION_ENABLED: 'false'
+  AIOPS_APPROVAL_ENABLED: 'true'
+  AIOPS_TOOLS_ENABLED: 'true'
+  AIOPS_GRAPH_ENABLED: 'true'
+  AIOPS_MODEL_PROVIDER: ollama
+  AIOPS_MODEL_NAME: gemma4:e2b-it-qat
+  AIOPS_MODEL_TIMEOUT_SECONDS: '180'
+  AIOPS_MODEL_CONTEXT_TOKENS: '16384'
+  KNOWLEDGE_VECTORS_ENABLED: 'true'
+  KNOWLEDGE_EMBEDDING_PROVIDER: ollama
+  OLLAMA_EMBEDDING_MODEL: embeddinggemma:300m
+  OLLAMA_BASE_URL: http://172.20.0.1:11434
+  PROMETHEUS_URL: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+  AIOPS_VIDEO_ENABLED: 'true'
+  AIOPS_HYPOTHESIS_REMEDIATION_ENABLED: 'false'
+  AIOPS_APPROVAL_TTL_SECONDS: '3600'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiops-api
+  namespace: aiops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aiops-api
+  template:
+    metadata:
+      labels:
+        app: aiops-api
+        aiops.video-platform/managed: 'true'
+    spec:
+      serviceAccountName: aiops-reader
+      containers:
+        - name: api
+          image: video-platform-aiops
+          imagePullPolicy: IfNotPresent
+          command:
+            - uvicorn
+            - app.aiops.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - '8010'
+          envFrom:
+            - configMapRef:
+                name: aiops-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-secrets
+                  key: DATABASE_URL
+            - name: AIOPS_OPERATOR_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-secrets
+                  key: operator-token
+            - name: AIOPS_WEBHOOK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-secrets
+                  key: webhook-token
+            - name: AIOPS_VIDEO_READER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-video-source
+                  key: reader-token
+          ports:
+            - name: http
+              containerPort: 8010
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 500m
+              memory: 384Mi
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aiops-api
+  namespace: aiops
+  labels:
+    aiops.video-platform/managed: 'true'
+spec:
+  selector:
+    app: aiops-api
+  ports:
+    - name: http
+      port: 8010
+      targetPort: http

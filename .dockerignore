@@ -1,0 +1,16 @@
+.git
+.venv
+.pytest_cache
+**/.ruff_cache
+.agents
+.codex
+**/__pycache__
+node_modules
+frontend/node_modules
+frontend/dist
+storage
+.env
+# Tests stay in Git and are mounted into the dedicated test image when run.
+backend/tests
+worker/tests
+tests

@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: aiops-platform
+  namespace: aiops
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      aiops.video-platform/managed: 'true'
+  endpoints:
+    - port: http
+      interval: 15s
+    - port: metrics
+      interval: 15s

@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aiops-postgres
+  namespace: aiops
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiops-postgres
+  namespace: aiops
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: aiops-postgres
+  template:
+    metadata:
+      labels:
+        app: aiops-postgres
+        aiops.video-platform/managed: 'true'
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: postgres
+          image: video-platform-aiops-db
+          env:
+            - name: POSTGRES_DB
+              value: aiops_control
+            - name: POSTGRES_USER
+              value: aiops_owner
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-secrets
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: database
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - aiops_owner
+                - -d
+                - aiops_control
+            periodSeconds: 5
+      volumes:
+        - name: database
+          persistentVolumeClaim:
+            claimName: aiops-postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aiops-postgres
+  namespace: aiops
+spec:
+  selector:
+    app: aiops-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432

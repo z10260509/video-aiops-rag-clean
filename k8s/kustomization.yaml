@@ -1,0 +1,53 @@
+{
+  "apiVersion": "kustomize.config.k8s.io/v1beta1",
+  "kind": "Kustomization",
+  "resources": [
+    "namespace.yaml",
+    "configmap.yaml",
+    "postgres.yaml",
+    "redis.yaml",
+    "media-pvc.yaml",
+    "migration-job.yaml",
+    "backend.yaml",
+    "worker.yaml",
+    "hpa.yaml",
+    "frontend.yaml",
+    "ingress.yaml",
+    "resource-quota.yaml",
+    "pdb.yaml",
+    "servicemonitor.yaml",
+    "prometheus-rule.yaml",
+    "grafana-dashboard.yaml",
+    "worker-metrics.yaml",
+    "log-collector-rbac.yaml",
+    "grafana-loki-datasource.yaml",
+    "aiops/namespace.yaml",
+    "aiops/postgres.yaml",
+    "aiops/reader-rbac.yaml",
+    "aiops/video-integration-rbac.yaml",
+    "aiops/api.yaml",
+    "aiops/graph-worker.yaml",
+    "aiops/executor.yaml",
+    "aiops/metrics.yaml",
+    "aiops/grafana-dashboard.yaml",
+    "aiops/migration-job.yaml"
+  ],
+  "images": [
+    {
+      "name": "video-platform-aiops",
+      "newTag": "hypothesis-v2-20261021-02"
+    },
+    {
+      "name": "video-platform-worker",
+      "newTag": "hypothesis-v2-20261021-02"
+    },
+    {
+      "name": "video-platform-aiops-ui",
+      "newTag": "hypothesis-v2-20261021-01"
+    },
+    {
+      "name": "video-platform-aiops-db",
+      "newTag": "p4-20261010-01"
+    }
+  ]
+}

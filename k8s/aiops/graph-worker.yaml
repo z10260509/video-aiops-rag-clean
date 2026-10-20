@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiops-graph-worker
+  namespace: aiops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aiops-graph-worker
+  template:
+    metadata:
+      labels:
+        app: aiops-graph-worker
+        aiops.video-platform/managed: 'true'
+    spec:
+      serviceAccountName: aiops-reader
+      containers:
+        - name: graph
+          image: video-platform-aiops
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -m
+            - app.aiops.graph_worker
+          envFrom:
+            - configMapRef:
+                name: aiops-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-secrets
+                  key: DATABASE_URL
+            - name: AIOPS_VIDEO_READER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-video-source
+                  key: reader-token
+          ports:
+            - name: metrics
+              containerPort: 8011
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aiops-graph-worker
+  namespace: aiops
+  labels:
+    app: aiops-graph-worker
+    aiops.video-platform/managed: 'true'
+spec:
+  selector:
+    app: aiops-graph-worker
+  ports:
+    - name: metrics
+      port: 8011
+      targetPort: metrics

@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aiops-executor
+  namespace: aiops
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiops-executor
+  namespace: aiops
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: aiops-executor
+  template:
+    metadata:
+      labels:
+        app: aiops-executor
+        aiops.video-platform/managed: 'true'
+    spec:
+      serviceAccountName: aiops-executor
+      containers:
+        - name: executor
+          image: video-platform-aiops
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -m
+            - app.aiops.executor
+          envFrom:
+            - configMapRef:
+                name: aiops-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-executor
+                  key: DATABASE_URL
+            - name: AIOPS_VIDEO_READER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-executor
+                  key: VIDEO_READER_TOKEN
+            - name: AIOPS_VIDEO_REPAIR_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-executor
+                  key: VIDEO_REPAIR_TOKEN
+          resources:
+            requests:
+              cpu: 25m
+              memory: 96Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

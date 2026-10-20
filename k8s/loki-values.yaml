@@ -1,0 +1,46 @@
+# Pin with: helm upgrade --install p1-loki grafana/loki --version 7.3.0 ...
+deploymentMode: SingleBinary
+loki:
+  image:
+    tag: '3.6.12'
+  auth_enabled: false # Private ClusterIP only; no Ingress/NodePort.
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+  schemaConfig:
+    configs:
+      - from: '2026-01-01'
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+  limits_config:
+    retention_period: 48h
+    max_query_length: 1h
+    max_entries_limit_per_query: 500
+    ingestion_rate_mb: 2
+    ingestion_burst_size_mb: 4
+  compactor:
+    retention_enabled: true
+    delete_request_store: filesystem
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    storageClass: standard
+    size: 2Gi
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 768Mi }
+read: { replicas: 0 }
+write: { replicas: 0 }
+backend: { replicas: 0 }
+gateway: { enabled: false }
+chunksCache: { enabled: false }
+resultsCache: { enabled: false }
+lokiCanary: { enabled: false }
+test: { enabled: false }
+minio: { enabled: false }

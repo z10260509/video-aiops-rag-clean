@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: aiops-schema-v2
+  namespace: aiops
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  template:
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      containers:
+        - name: schema
+          image: video-platform-aiops
+          command:
+            - sh
+            - -c
+            - cd /app/backend && alembic upgrade head && python -m app.aiops.checkpoints
+              && python -m app.aiops.provision && python -m app.aiops.provision_executor
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-secrets
+                  key: OWNER_DATABASE_URL
+            - name: AIOPS_RUNTIME_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-secrets
+                  key: AIOPS_RUNTIME_PASSWORD
+            - name: AIOPS_EXECUTOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-executor
+                  key: password
+            - name: KNOWLEDGE_VECTORS_ENABLED
+              value: 'true'
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

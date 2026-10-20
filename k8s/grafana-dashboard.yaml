@@ -1,0 +1,191 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: video-platform-dashboard
+  namespace: video-platform
+  labels:
+    grafana_dashboard: '1'
+data:
+  video-platform-overview.json: |
+    {
+      "uid": "video-platform-overview",
+      "title": "Video Platform Overview",
+      "schemaVersion": 39,
+      "version": 2,
+      "panels": [
+        {
+          "id": 1,
+          "title": "Jobs by status",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "max by (namespace,status) (video_jobs_by_status)",
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "id": 2,
+          "title": "Worker replicas",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "kube_deployment_status_replicas_available{namespace=\"video-platform\",deployment=\"worker\"}",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          }
+        },
+        {
+          "id": 3,
+          "title": "API request rate",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "sum(rate(video_api_http_requests_total[5m])) by (path,status)",
+              "legendFormat": "{{path}} {{status}}",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 8
+          }
+        },
+        {
+          "id": 4,
+          "title": "API p95 latency",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95,sum(rate(video_api_http_request_duration_seconds_bucket[5m])) by (le,path))",
+              "legendFormat": "{{path}}",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 8
+          }
+        },
+        {
+          "id": 5,
+          "title": "Worker CPU cores",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"video-platform\",container=\"worker\"}[5m]))",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 16
+          }
+        },
+        {
+          "id": 6,
+          "title": "Video storage bytes",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "max by (namespace,kind) (video_media_bytes)",
+              "legendFormat": "{{kind}}",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 16
+          }
+        },
+        {
+          "id": 7,
+          "title": "Terminal tasks per second",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "sum by (namespace,status) (rate(video_tasks_total[5m]))",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 24
+          }
+        },
+        {
+          "id": 8,
+          "title": "Task duration p95",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95,sum by (namespace,le) (rate(video_task_duration_seconds_bucket[5m])))",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 24
+          }
+        },
+        {
+          "id": 9,
+          "title": "Broker unclaimed queue depth",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "video_queue_depth",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 32
+          }
+        },
+        {
+          "id": 10,
+          "title": "Exporter source health",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "video_exporter_source_up",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 32
+          }
+        }
+      ]
+    }

@@ -1,0 +1,145 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: video-platform
+  labels:
+    app: backend
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: video-platform
+  labels:
+    aiops.video-platform/repair-enabled: 'true'
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        aiops.video-platform/repair-enabled: 'true'
+    spec:
+      nodeSelector:
+        video-platform.io/workload: 'true'
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: backend
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: backend
+      containers:
+        - name: backend
+          image: video-platform-aiops
+          imagePullPolicy: IfNotPresent
+          command:
+            - uvicorn
+            - app.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - '8000'
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: video-platform-secrets
+                  key: DATABASE_URL
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: video-platform-config
+                  key: REDIS_URL
+            - name: STORAGE_ROOT
+              valueFrom:
+                configMapKeyRef:
+                  name: video-platform-config
+                  key: STORAGE_ROOT
+            - name: MAX_UPLOAD_BYTES
+              valueFrom:
+                configMapKeyRef:
+                  name: video-platform-config
+                  key: MAX_UPLOAD_BYTES
+            - name: AIOPS_VIDEO_ENABLED
+              value: 'true'
+            - name: AIOPS_VIDEO_DEMO_ENABLED
+              value: 'true'
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: KUBERNETES_NAMESPACE
+              value: video-platform
+            - name: AIOPS_VIDEO_READER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-video-integration
+                  key: reader-token
+            - name: AIOPS_VIDEO_REPAIR_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-video-integration
+                  key: repair-token
+            - name: AIOPS_OPERATOR_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aiops-video-integration
+                  key: operator-token
+          volumeMounts:
+            - name: media-storage
+              mountPath: /storage
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: media-storage
+          persistentVolumeClaim:
+            claimName: media-storage

@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aiops-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: '1'
+data:
+  aiops.json: |
+    {
+      "uid": "video-platform-aiops",
+      "title": "Video Platform AIOps",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "Persisted incidents",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "aiops_incidents",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "id": 2,
+          "title": "API requests",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "sum by (status) (rate(aiops_http_requests_total[5m]))",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          }
+        },
+        {
+          "id": 3,
+          "title": "Tool outcomes",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "sum by (tool,outcome) (rate(aiops_tool_calls_total[5m]))",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 8
+          }
+        },
+        {
+          "id": 4,
+          "title": "Model latency p95",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95,sum by (le,provider) (rate(aiops_model_duration_seconds_bucket[5m])))",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 8
+          }
+        },
+        {
+          "id": 5,
+          "title": "Graph duration p95",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95,sum by (le) (rate(aiops_analysis_duration_seconds_bucket[5m])))",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 16
+          }
+        },
+        {
+          "id": 6,
+          "title": "Truncated evidence",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "sum by (tool) (rate(aiops_evidence_truncated_total[5m]))",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 16
+          }
+        }
+      ]
+    }

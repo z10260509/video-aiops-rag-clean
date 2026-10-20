@@ -1,0 +1,51 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: video-platform-alerts
+  namespace: video-platform
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: video-platform.rules
+      rules:
+        - alert: VideoPlatformBackendDown
+          expr: (sum(up{namespace="video-platform", service="backend"}) or vector(0)) < 1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: Video Platform backend has no scrapeable replicas.
+        - alert: VideoPlatformWorkerUnavailable
+          expr: kube_deployment_status_replicas_available{namespace="video-platform", deployment="worker"} < 1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: Video Platform has no available Worker Pod.
+        - alert: VideoPlatformTaskFailureRate
+          expr: |
+            (sum(increase(video_tasks_total{namespace="video-platform",status="failed"}[5m]))
+             / clamp_min(sum(increase(video_tasks_total{namespace="video-platform"}[5m])), 1) > 0.2)
+            and (sum(increase(video_tasks_total{namespace="video-platform"}[5m])) >= 5)
+          for: 1m
+          labels: { severity: warning, namespace: video-platform }
+          annotations:
+            { summary: Task failure rate exceeds 20 percent with at least five executions. }
+        - alert: VideoPlatformQueueBacklog
+          expr: 'video_queue_depth{namespace="video-platform"} > 20'
+          for: 3m
+          labels: { severity: warning }
+          annotations: { summary: More than twenty tasks remain unclaimed in the broker. }
+        - alert: VideoPlatformMetricsSourceUnavailable
+          expr: 'video_exporter_source_up{namespace="video-platform"} == 0'
+          for: 1m
+          labels: { severity: warning }
+          annotations: { summary: Task metrics database or broker source is unavailable. }
+        - alert: VideoPlatformExporterDown
+          expr: |
+            (max(kube_deployment_spec_replicas{namespace="video-platform",deployment="worker-metrics"}) > 0)
+            and ((sum(up{namespace="video-platform",service="worker-metrics"}) or vector(0)) < 1)
+          for: 1m
+          labels: { severity: warning, namespace: video-platform }
+          annotations: { summary: The configured task exporter has no healthy scrape target. }

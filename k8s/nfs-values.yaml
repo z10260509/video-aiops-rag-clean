@@ -1,0 +1,25 @@
+persistence:
+  enabled: true
+  storageClass: standard
+  size: 10Gi
+
+storageClass:
+  create: true
+  name: video-nfs
+  reclaimPolicy: Delete
+
+nodeSelector:
+  kubernetes.io/hostname: video-platform-control-plane
+
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

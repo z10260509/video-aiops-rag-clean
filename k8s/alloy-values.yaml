@@ -1,0 +1,74 @@
+# grafana/alloy chart 1.13.1; API log reader with namespace-scoped RBAC.
+rbac:
+  create: false
+serviceAccount:
+  create: true
+  name: video-log-collector
+controller:
+  type: deployment
+  replicas: 1
+alloy:
+  resources:
+    requests: { cpu: 50m, memory: 96Mi }
+    limits: { cpu: 300m, memory: 256Mi }
+  configMap:
+    create: true
+    content: |
+      discovery.kubernetes "workers" {
+        role = "pod"
+        namespaces { names = ["video-platform"] }
+        selectors {
+          role = "pod"
+          label = "app=worker"
+        }
+      }
+      discovery.relabel "workers" {
+        targets = discovery.kubernetes.workers.targets
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app"]
+          target_label = "app"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          regex = "worker"
+          action = "keep"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label = "container"
+        }
+      }
+      loki.source.kubernetes "workers" {
+        targets = discovery.relabel.workers.output
+        forward_to = [loki.process.safe.receiver]
+      }
+      loki.process "safe" {
+        stage.drop {
+          longer_than = "8KB"
+          drop_counter_reason = "oversized_worker_log"
+        }
+        stage.replace {
+          expression = "(?i)(Bearer[ ]+[A-Za-z0-9._~+/-]+=*)"
+          replace = "[REDACTED]"
+        }
+        stage.replace {
+          expression = "(?i)((password|passwd|token|secret|api[_-]?key)[= :]+[^ ,;]+)"
+          replace = "[REDACTED]"
+        }
+        stage.replace {
+          expression = "([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})"
+          replace = "[EMAIL]"
+        }
+        forward_to = [loki.write.local.receiver]
+      }
+      loki.write "local" {
+        endpoint { url = "http://p1-loki.monitoring.svc.cluster.local:3100/loki/api/v1/push" }
+      }

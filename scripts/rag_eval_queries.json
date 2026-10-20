@@ -1,0 +1,62 @@
+[
+  {
+    "query": "FFmpeg fails with Unknown encoder and an invalid codec option; worker still ready",
+    "expected": "ffmpeg-invalid-codec.md"
+  },
+  {
+    "query": "Encoder not found for one video task, other H264 tasks complete",
+    "expected": "ffmpeg-invalid-codec.md"
+  },
+  {
+    "query": "How can I distinguish unsupported FFmpeg encoder from a Redis broker outage?",
+    "expected": "ffmpeg-invalid-codec.md"
+  },
+  {
+    "query": "Worker last terminated state is OOMKilled with increasing restarts",
+    "expected": "worker-oom.md"
+  },
+  {
+    "query": "FFmpeg memory working set reaches container limit while transcode stops",
+    "expected": "worker-oom.md"
+  },
+  {
+    "query": "Does exit code 137 alone prove worker memory exhaustion?",
+    "expected": "worker-oom.md"
+  },
+  {
+    "query": "Celery Redis broker hostname has name resolution failure",
+    "expected": "redis-connectivity.md"
+  },
+  {
+    "query": "Redis connection refused and consumers repeatedly reconnect",
+    "expected": "redis-connectivity.md"
+  },
+  {
+    "query": "How to distinguish Redis DNS errors from a reachable broker timeout?",
+    "expected": "redis-connectivity.md"
+  },
+  {
+    "query": "Celery waiting queue depth grows with slow completed tasks and ready consumers",
+    "expected": "celery-backlog.md"
+  },
+  {
+    "query": "Jobs remain pending because no consumers subscribe to the correct queue",
+    "expected": "celery-backlog.md"
+  },
+  {
+    "query": "Queue backlog increases as incoming tasks exceed worker processing capacity",
+    "expected": "celery-backlog.md"
+  },
+  {
+    "query": "PostgreSQL reports too many clients already and exhausted connection slots",
+    "expected": "postgres-connections.md"
+  },
+  {
+    "query": "SQLAlchemy pool timeout with pg_stat_activity near max_connections",
+    "expected": "postgres-connections.md"
+  },
+  {
+    "query": "How to investigate leaked connections and idle in transaction PostgreSQL sessions?",
+    "expected": "postgres-connections.md"
+  }
+]
