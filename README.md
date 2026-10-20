@@ -46,3 +46,7 @@ make aiops-ui
 ## 架構圖
 
 <img width="1200" height="1121" alt="image" src="https://github.com/user-attachments/assets/3e941309-a0eb-413b-8cfe-ec6d4804fc57" />
+
+## 影片demo連結
+
+[Demo](https://drive.google.com/file/d/1JKTu_dxtmRu-FUOVw6Jzaj21BeeF7N73/view?usp=sharing)
